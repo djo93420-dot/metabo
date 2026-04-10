@@ -3022,7 +3022,7 @@ function telechargerRapport() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SERVICE WORKER + PWA
+// SERVICE WORKER + PWA (modifié pour icônes valides et fallback manuel)
 // ═══════════════════════════════════════════════════════════
 let deferredInstallPrompt = null;
 
@@ -3040,18 +3040,31 @@ function initPWA() {
     navigator.serviceWorker.register(swUrl).catch(() => {});
   }
 
-  // Détection prompt d'installation
+  let promptShown = false;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredInstallPrompt = e;
+    promptShown = true;
     const dismissed = localStorage.getItem('pwa_dismissed');
-    if (!dismissed) setTimeout(showPWABanner, 3000);
+    if (!dismissed) setTimeout(showPWABanner, 2000);
   });
 
-  window.addEventListener('appinstalled', () => {
-    hidePWABanner();
-    showToast('✅ MÉTABO installé sur ton appareil !');
-  });
+  // Fallback : si après 5 secondes l'événement n'est pas venu, on propose une installation manuelle
+  setTimeout(() => {
+    if (!promptShown && !localStorage.getItem('pwa_dismissed')) {
+      deferredInstallPrompt = null;
+      showPWABanner();
+      const bannerText = document.querySelector('#pwa-banner .pwa-text span');
+      if (bannerText) bannerText.textContent = 'Menu ⋮ → Installer l’application';
+      const installBtn = document.querySelector('.pwa-install-btn');
+      if (installBtn) {
+        installBtn.textContent = 'Comment faire';
+        installBtn.onclick = () => {
+          alert('Sur iPhone : Partager → Sur l’écran d’accueil\nSur Android : Menu ⋮ → Installer l’application\nSur ordinateur : icône (+) dans la barre d’adresse');
+        };
+      }
+    }
+  }, 5000);
 }
 
 function showPWABanner() {
@@ -3061,16 +3074,17 @@ function hidePWABanner() {
   document.getElementById('pwa-banner')?.classList.remove('show');
 }
 function installPWA() {
-  if (!deferredInstallPrompt) {
-    showToast('💡 Menu navigateur : Ajouter a l ecran accueil');
-    return;
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(result => {
+      if (result.outcome === 'accepted') showToast('✅ Installation lancée !');
+      deferredInstallPrompt = null;
+      hidePWABanner();
+    });
+  } else {
+    // Instructions manuelles
+    alert('📱 Installation manuelle :\n• iPhone : Partager → "Sur l’écran d’accueil"\n• Android : Menu ⋮ → "Installer l’application"\n• Ordinateur : Icône (+) dans la barre d’adresse');
   }
-  deferredInstallPrompt.prompt();
-  deferredInstallPrompt.userChoice.then(result => {
-    if (result.outcome === 'accepted') showToast('✅ Installation lancée !');
-    deferredInstallPrompt = null;
-    hidePWABanner();
-  });
 }
 function dismissPWA() {
   hidePWABanner();
@@ -3078,9 +3092,33 @@ function dismissPWA() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MANIFEST PWA (injecté dynamiquement)
+// MANIFEST PWA AVEC ICÔNES VALIDES (GÉNÉRÉES EN BASE64)
 // ═══════════════════════════════════════════════════════════
 function injectManifest() {
+  // Fonction qui génère une icône carrée avec fond bleu/violet et éclair blanc
+  function generateIcon(size) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Fond dégradé
+    const gradient = ctx.createLinearGradient(0, 0, size, size);
+    gradient.addColorStop(0, '#0A84FF');
+    gradient.addColorStop(1, '#BF5AF2');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    // Éclair blanc
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold ${size * 0.55}px "Inter", -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', size / 2, size / 2);
+
+    return canvas.toDataURL('image/png');
+  }
+
   const manifest = {
     name: 'MÉTABO — Journal Métabolique',
     short_name: 'MÉTABO',
@@ -3091,7 +3129,18 @@ function injectManifest() {
     theme_color: '#0A84FF',
     orientation: 'portrait-primary',
     icons: [
-      { src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', sizes: '192x192', type: 'image/png' }
+      {
+        src: generateIcon(192),
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable'
+      },
+      {
+        src: generateIcon(512),
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable'
+      }
     ]
   };
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
