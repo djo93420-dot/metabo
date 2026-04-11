@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>MÉTABO — Journal Métabolique</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
@@ -3560,8 +3560,9 @@ async function searchOFF() {
   resultsEl.style.display = 'block';
   resultsEl.innerHTML = '<div class="off-loading">🔍 Recherche...</div>';
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments,code,image_front_url`;
+    const url = `https://fr.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,code,image_front_url`;
     const resp = await fetch(url);
+    if (!resp.ok) throw new Error('OFF server error');
     const data = await resp.json();
     const products = (data.products || []).filter(p => p.product_name && p.nutriments);
     if (products.length === 0) {
@@ -3587,8 +3588,9 @@ async function searchOFF() {
 
 async function searchOFFBarcode(barcode) {
   try {
-    const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+    const url = `https://fr.openfoodfacts.org/api/v0/product/${barcode}.json`;
     const resp = await fetch(url);
+    if (!resp.ok) throw new Error('OFF server error');
     const data = await resp.json();
     if (data.status === 1 && data.product) {
       const p = data.product;
@@ -3624,7 +3626,7 @@ function addFoodFromOFF(product) {
 async function startBarcodeScanner() {
   const overlay = document.getElementById('scanner-overlay');
   if (!overlay) {
-    document.body.insertAdjacentHTML('beforeend', `<div id="scanner-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;"><div style="width:100%;max-width:500px;position:relative;margin:0 20px;"><button onclick="closeScanner()" style="position:absolute;top:-40px;right:0px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;z-index:901;">&times;</button><div id="reader" style="width:100%;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);background:#000;"></div></div><div style="color:var(--text3);margin-top:20px;font-size:13px;text-align:center;">Placez le code-barres au centre</div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="scanner-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;"><div style="width:100%;max-width:500px;position:relative;margin:0 20px;"><button onclick="closeScanner()" style="position:absolute;top:-40px;right:0px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;z-index:901;">&times;</button><div id="reader" style="width:100%;min-height:300px;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);background:#000;"></div></div><div style="color:var(--text3);margin-top:20px;font-size:13px;text-align:center;">Placez le code-barres au centre</div></div>`);
   }
   document.getElementById('scanner-overlay').style.display = 'flex';
   
@@ -3633,7 +3635,7 @@ async function startBarcodeScanner() {
   window.html5QrCode = new Html5Qrcode("reader");
   window.html5QrCode.start(
     { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 150 } },
+    { fps: 10, aspectRatio: 1.0 },
     (decodedText) => {
       window.html5QrCode.stop().then(() => {
         document.getElementById('scanner-overlay').style.display = 'none';
