@@ -172,13 +172,13 @@ body.light header { background: rgba(255,255,255,0.85); }
 .theme-dot::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: rgba(255,255,255,0.3); opacity: 0; transition: opacity 0.15s; }
 .theme-dot:hover::after { opacity: 1; }
 
-/* SYNCHRO QR */
-#sync-overlay {
+/* OVERLAYS (Sync, Themes, Notif) */
+#sync-overlay, #themes-overlay, #notif-overlay {
   position: fixed; inset: 0; z-index: 600;
   background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
   display: none; align-items: center; justify-content: center; padding: 20px;
 }
-#sync-overlay.open { display: flex; }
+#sync-overlay.open, #themes-overlay.open, #notif-overlay.open { display: flex; }
 .sync-box {
   background: var(--surface); border: 1px solid var(--border2);
   border-radius: 24px; padding: 28px; width: 380px; max-width: 95vw;
@@ -656,7 +656,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -672,7 +671,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap;">
       <button onclick="openCloud()" id="btn-cloud" title="Sauvegarde Cloud" style="background:rgba(191,90,242,0.12);border:1px solid rgba(191,90,242,0.25);color:var(--purple);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">☁️ Cloud</button>
-    </div>
     </div>
   </div>
   <div class="tabs-nav">
@@ -922,18 +920,6 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       </div>
     </div>
 
-    <!-- Recherche Open Food Facts -->
-    <div style="margin-bottom:14px;">
-      <div class="sec-label">Rechercher un aliment</div>
-      <div class="off-search-wrap">
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="off-search" placeholder="Ex: yaourt grec, pain complet…" style="flex:1;" oninput="debounceOFF()" onkeydown="if(event.key==='Enter')searchOFF()">
-          <button onclick="searchOFF()" style="padding:11px 16px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;">🔍</button>
-          <button onclick="startBarcodeScanner()" title="Scanner code-barres" style="padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-size:16px;cursor:pointer;">📷</button>
-        </div>
-        <div id="off-results" style="display:none;"></div>
-      </div>
-    </div>
 
     <div id="food-log-list">
       <div class="food-log-row" style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;padding-bottom:8px;border-bottom:1px solid var(--border);">
@@ -3493,7 +3479,9 @@ function setElText(id,txt){const el=document.getElementById(id);if(el)el.textCon
 
 function saveState(){
   try{
-    localStorage.setItem(SAVE_KEY,JSON.stringify(collectState()));
+    const state = collectState();
+    state._lastRecordedDate = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(SAVE_KEY,JSON.stringify(state));
     if(typeof triggerSyncToCloud === 'function') triggerSyncToCloud();
   }catch(e){}
 }
@@ -3502,6 +3490,8 @@ function loadState(){
   try{
     const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
     const s=JSON.parse(raw);
+    const today = new Date().toISOString().slice(0, 10);
+    const isNewDay = s._lastRecordedDate && s._lastRecordedDate !== today;
     const p=s.profil;
     if(p){
       setVal('age',p.age);setVal('poids',p.poids);setVal('taille',p.taille);
@@ -3537,9 +3527,21 @@ function loadState(){
       (s.muscu.singles||[]).forEach(r=>addMuscuRow(r));
       (s.muscu.ss||[]).forEach(ss=>addSupersetBlock(ss));
     }
+    if(isNewDay && s.alim) {
+      s.alim = { macroP:0, macroC:0, macroL:0, alcoolType:'vin', alcoolQty:0, food:[] };
+    }
     if(s.alim){
       setVal('macro-p',s.alim.macroP);setVal('macro-c',s.alim.macroC);setVal('macro-l',s.alim.macroL);
       (s.alim.food||[]).forEach(f=>addFoodRow(f));
+    }
+    if(isNewDay && s.activite) {
+      s.activite.marcheHors = 0;
+      s.activite.menage = 0;
+      s.activite.trajets = 0;
+      s.activite.hydraLitres = 0;
+      s.activite.fidgetLevel = '';
+      s.activite.sexActiviteLevel = 'none';
+      setTimeout(() => showToast("🌅 Nouvelle journée — Compteurs réinitialisés"), 1000);
     }
     if(s.activite){
       setVal('metier',s.activite.metier);setVal('work-hours',s.activite.workHours);
@@ -3566,122 +3568,6 @@ function loadState(){
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// OPEN FOOD FACTS
-// ═══════════════════════════════════════════════════════════
-let offDebounceTimer = null;
-function debounceOFF() {
-  clearTimeout(offDebounceTimer);
-  offDebounceTimer = setTimeout(searchOFF, 600);
-}
-
-async function searchOFF() {
-  const q = document.getElementById('off-search')?.value?.trim();
-  const resultsEl = document.getElementById('off-results');
-  if (!resultsEl) return;
-  if (!q || q.length < 2) { resultsEl.style.display = 'none'; return; }
-  resultsEl.style.display = 'block';
-  resultsEl.innerHTML = '<div class="off-loading">🔍 Recherche...</div>';
-  try {
-    const url = `https://fr.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,code,image_front_url`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('OFF server error');
-    const data = await resp.json();
-    const products = (data.products || []).filter(p => p.product_name && p.nutriments);
-    if (products.length === 0) {
-      resultsEl.innerHTML = '<div class="off-loading">Aucun résultat — essaie en anglais</div>';
-      return;
-    }
-    resultsEl.innerHTML = products.map(p => {
-      const n = p.nutriments;
-      const kcal = Math.round(n['energy-kcal_100g'] || n['energy_100g'] / 4.184 || 0);
-      const prot = (n['proteins_100g'] || 0).toFixed(1);
-      const glu = (n['carbohydrates_100g'] || 0).toFixed(1);
-      const lip = (n['fat_100g'] || 0).toFixed(1);
-      const brand = p.brands ? ` · ${p.brands.split(',')[0]}` : '';
-      const img = p.image_front_url ? `<img src="${p.image_front_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;background:white;margin-right:12px;flex-shrink:0;">` : `<div style="width:40px;height:40px;border-radius:6px;background:var(--surface3);margin-right:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🍽️</div>`;
-      return `<div class="off-result" style="display:flex;align-items:center;cursor:pointer;" onclick='addFoodFromOFF(${JSON.stringify({
-        name: p.product_name, brand: p.brands?.split(",")[0]||"", kcal, prot, glu, lip
-      }).replace(/'/g,"&apos;")})'>${img}<div><div class="off-result-name">${p.product_name}</div><div class="off-result-brand">${brand}</div><div class="off-result-macros">${kcal} kcal · P:${prot}g · G:${glu}g · L:${lip}g <span style="font-size:10px;color:var(--text3)">/ 100g</span></div></div></div>`;
-    }).join('');
-  } catch(e) {
-    resultsEl.innerHTML = '<div class="off-loading">❌ Erreur réseau — vérifie ta connexion</div>';
-  }
-}
-
-async function searchOFFBarcode(barcode) {
-  try {
-    const url = `https://fr.openfoodfacts.org/api/v0/product/${barcode}.json`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('OFF server error');
-    const data = await resp.json();
-    if (data.status === 1 && data.product) {
-      const p = data.product;
-      const n = p.nutriments;
-      const kcal = Math.round(n['energy-kcal_100g'] || 0);
-      addFoodFromOFF({ name: p.product_name, brand: p.brands?.split(',')[0]||'', kcal, prot: +(n['proteins_100g']||0).toFixed(1), glu: +(n['carbohydrates_100g']||0).toFixed(1), lip: +(n['fat_100g']||0).toFixed(1) });
-      showToast(`✅ ${p.product_name} ajouté`);
-    } else {
-      showToast('⚠️ Produit non trouvé dans Open Food Facts');
-    }
-  } catch { showToast('❌ Erreur réseau'); }
-}
-
-function addFoodFromOFF(product) {
-  if (typeof product === 'string') product = JSON.parse(product);
-  const resultsEl = document.getElementById('off-results');
-  if (resultsEl) resultsEl.style.display = 'none';
-  const searchEl = document.getElementById('off-search');
-  if (searchEl) searchEl.value = '';
-  // Demander la quantité
-  const qty = prompt(`Quantité de "${product.name}" (grammes) ?`, '100');
-  if (!qty || isNaN(+qty)) return;
-  const g = +qty / 100;
-  addFoodRow({
-    n: `${product.name}${product.brand?' ('+product.brand+')':''}`,
-    k: Math.round(product.kcal * g),
-    p: (product.prot * g).toFixed(1),
-    c: (product.glu * g).toFixed(1),
-    l: (product.lip * g).toFixed(1)
-  });
-}
-
-let scannerInstance = null;
-async function startBarcodeScanner() {
-  const overlay = document.getElementById('scanner-overlay');
-  if (!overlay) {
-    document.body.insertAdjacentHTML('beforeend', `<div id="scanner-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;"><div style="width:100%;max-width:500px;position:relative;margin:0 20px;background:var(--surface);border-radius:16px;padding:20px;padding-top:40px;"><button onclick="closeScanner()" style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;z-index:901;">&times;</button><div id="reader" style="width:100%;min-height:300px;"></div></div></div>`);
-  }
-  document.getElementById('scanner-overlay').style.display = 'flex';
-  
-  if (typeof Html5QrcodeScanner === 'undefined') { showToast('⚠️ Librairie Scanner non chargée'); return; }
-  
-  if (!scannerInstance) {
-    scannerInstance = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-  }
-  
-  scannerInstance.render((decodedText) => {
-    scannerInstance.clear().then(() => {
-      document.getElementById('scanner-overlay').style.display = 'none';
-      searchOFFBarcode(decodedText);
-      scannerInstance = null; // reset to allow re-init easily
-    }).catch(()=>{});
-  }, (err) => { /* ignore minor scan errors */ });
-}
-
-window.closeScanner = function() {
-  document.getElementById('scanner-overlay').style.display = 'none';
-  if (scannerInstance) {
-    scannerInstance.clear().then(() => { scannerInstance = null; }).catch(()=>{});
-  }
-}
-
-// Fermer OFF results en cliquant ailleurs
-document.addEventListener('click', e => {
-  const res = document.getElementById('off-results');
-  const search = document.getElementById('off-search');
-  if (res && !res.contains(e.target) && e.target !== search) res.style.display = 'none';
-});
 
 // ═══════════════════════════════════════════════════════════
 // REPAS SAUVEGARDÉS
