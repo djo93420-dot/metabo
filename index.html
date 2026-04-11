@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MÉTABO — Journal Métabolique</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=SF+Pro+Display:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MÉTABO">
+<meta name="theme-color" content="#0A84FF" id="theme-color-meta">
 <style>
 /* ═══ DESIGN SYSTEM — Apple-like ═══════════════════════════ */
 :root {
@@ -15,6 +21,7 @@
   --surface3: rgba(58,58,60,0.6);
   --border: rgba(255,255,255,0.08);
   --border2: rgba(255,255,255,0.14);
+  --accent: #0A84FF;
   --blue: #0A84FF;
   --green: #30D158;
   --orange: #FF9F0A;
@@ -31,6 +38,12 @@
   --r-sm: 10px;
   --shadow: 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
 }
+/* THEMES */
+[data-theme="rouge"] { --blue: #FF453A; --accent: #FF453A; }
+[data-theme="vert"] { --blue: #30D158; --accent: #30D158; }
+[data-theme="violet"] { --blue: #BF5AF2; --accent: #BF5AF2; }
+[data-theme="or"] { --blue: #FFD60A; --accent: #FFD60A; }
+[data-theme="rose"] { --blue: #FF375F; --accent: #FF375F; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
 body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; overflow-x: hidden; padding-bottom: 160px; }
@@ -130,7 +143,84 @@ body.light header { background: rgba(255,255,255,0.85); }
 .rapport-btn.secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
 .rapport-btn:hover { filter: brightness(1.1); }
 
+/* OPEN FOOD FACTS */
+.off-search-wrap { position: relative; }
+.off-results {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; max-height: 280px; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); margin-top: 4px;
+}
+.off-result {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.off-result:last-child { border-bottom: none; }
+.off-result:hover { background: var(--surface2); }
+.off-result-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.off-result-brand { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.off-result-macros { font-size: 11px; color: var(--blue); margin-top: 3px; font-weight: 500; }
+.off-loading { padding: 16px; text-align: center; font-size: 12px; color: var(--text3); }
+
+/* THEMES PICKER */
+.theme-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.theme-dot {
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all 0.15s; position: relative;
+}
+.theme-dot.active { border-color: var(--text); transform: scale(1.15); }
+.theme-dot::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: rgba(255,255,255,0.3); opacity: 0; transition: opacity 0.15s; }
+.theme-dot:hover::after { opacity: 1; }
+
+/* SYNCHRO QR */
+#sync-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#sync-overlay.open { display: flex; }
+.sync-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 24px; padding: 28px; width: 380px; max-width: 95vw;
+  max-height: 90vh; overflow-y: auto;
+}
+.sync-tab-row { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+.sync-tab { flex: 1; padding: 8px; border-radius: 8px; border: none; background: none; color: var(--text3); font-size: 13px; font-weight: 500; cursor: pointer; }
+.sync-tab.active { background: rgba(255,255,255,0.12); color: var(--text); }
+#qr-canvas { display: block; margin: 0 auto; border-radius: 12px; }
+
+/* NOTIF SETTINGS */
+.notif-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.notif-row:last-child { border-bottom: none; }
+.notif-label { font-size: 14px; font-weight: 500; }
+.notif-time { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* ALCOOL */
+.alcool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+.alcool-card {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer;
+  transition: all 0.15s; user-select: none;
+}
+.alcool-card:hover { border-color: var(--border2); }
+.alcool-card.active { border-color: var(--orange); background: rgba(255,159,10,0.1); }
+.alcool-icon { font-size: 20px; margin-bottom: 4px; }
+.alcool-label { font-size: 11px; font-weight: 600; color: var(--text3); }
+.alcool-kcal { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.alcool-card.active .alcool-label { color: var(--orange); }
+
+/* REPAS SAUVEGARDÉS */
+.repas-pill {
+  display: flex; align-items: center; gap: 6px; padding: 7px 12px;
+  border-radius: 20px; border: 1px solid var(--border2); background: var(--surface2);
+  color: var(--text3); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+}
+.repas-pill:hover { border-color: var(--orange); color: var(--orange); }
+.repas-pill .rp-del { color: var(--red); opacity: 0; transition: opacity 0.15s; font-size: 11px; }
+.repas-pill:hover .rp-del { opacity: 1; }
+
 /* PWA INSTALL */
+#pwa-banner {
 #pwa-banner {
   position: fixed; bottom: 160px; left: 50%; transform: translateX(-50%);
   background: var(--surface); border: 1px solid var(--border2);
@@ -566,10 +656,12 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <div>
       <div class="app-name">MÉTABO<span>.</span></div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-      <button onclick="openWidget()" title="Widget résumé" style="background:rgba(10,132,255,0.12);border:1px solid rgba(10,132,255,0.25);color:var(--blue);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;" >◎</button>
-      <button onclick="toggleDark()" id="dark-btn" title="Mode clair/sombre" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🌙</button>
-      <button onclick="exportCSV()" title="Exporter CSV" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:13px;font-weight:500;cursor:pointer;padding:6px 10px;border-radius:10px;">↓ CSV</button>
+    <div style="display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap;">
+      <button onclick="openWidget()" title="Widget" style="background:rgba(10,132,255,0.12);border:1px solid rgba(10,132,255,0.25);color:var(--blue);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">◎</button>
+      <button onclick="openSync()" title="Synchro" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">⇄</button>
+      <button onclick="openThemes()" title="Thème" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🎨</button>
+      <button onclick="toggleDark()" id="dark-btn" title="Clair/Sombre" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🌙</button>
+      <button onclick="openNotifSettings()" title="Rappels" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🔔</button>
       <button onclick="resetSession()" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:13px;cursor:pointer;padding:6px 10px;border-radius:10px;">↺</button>
     </div>
   </div>
@@ -808,15 +900,36 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   </div>
 
   <div class="card">
-    <div class="card-header"><div class="card-icon green">✏️</div><div class="card-title">Ce que j'ai mangé aujourd'hui</div><div class="card-badge">Apports réels</div></div>
-    <p style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">Saisis tes apports réels — la balance énergie/dépense et le TEF se mettent à jour automatiquement dans la bande en bas.</p>
+    <div class="card-header"><div class="card-icon green">✏️</div><div class="card-title">Ce que j'ai mangé aujourd'hui</div><div class="card-badge">Open Food Facts</div></div>
+
+    <!-- Repas sauvegardés -->
+    <div style="margin-bottom:14px;">
+      <div class="sec-label">Mes repas habituels</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;" id="repas-pills-wrap">
+        <div id="repas-pills"></div>
+        <button onclick="sauvegarderRepas()" style="padding:7px 12px;border-radius:20px;border:1px dashed rgba(255,159,10,0.4);background:transparent;color:var(--orange);font-size:12px;font-weight:500;cursor:pointer;">＋ Sauvegarder repas actuel</button>
+      </div>
+    </div>
+
+    <!-- Recherche Open Food Facts -->
+    <div style="margin-bottom:14px;">
+      <div class="sec-label">Rechercher un aliment</div>
+      <div class="off-search-wrap">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="off-search" placeholder="Ex: yaourt grec, pain complet…" style="flex:1;" oninput="debounceOFF()" onkeydown="if(event.key==='Enter')searchOFF()">
+          <button onclick="searchOFF()" style="padding:11px 16px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;">🔍</button>
+          <button onclick="startBarcodeScanner()" title="Scanner code-barres" style="padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-size:16px;cursor:pointer;">📷</button>
+        </div>
+        <div id="off-results" style="display:none;"></div>
+      </div>
+    </div>
 
     <div id="food-log-list">
       <div class="food-log-row" style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;padding-bottom:8px;border-bottom:1px solid var(--border);">
         <span>Aliment / Repas</span><span>kcal</span><span>Prot. g</span><span>Glu. g</span><span>Lip. g</span><span></span>
       </div>
     </div>
-    <button class="add-btn" onclick="addFoodRow()" style="margin-top:10px;">＋ Ajouter un aliment / repas</button>
+    <button class="add-btn" onclick="addFoodRow()" style="margin-top:10px;">＋ Ajouter manuellement</button>
 
     <div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;">
       <div style="font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Totaux réels du jour</div>
@@ -827,6 +940,32 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
         <div><div style="font-size:10px;color:var(--purple);">Lipides</div><div style="font-size:22px;font-weight:700;color:var(--purple);letter-spacing:-0.5px;" id="real-l">0</div><div style="font-size:10px;color:var(--text3);">g</div></div>
       </div>
       <div style="margin-top:8px;font-size:11px;color:var(--text3);">TEF réel : <span id="tef-real" style="color:var(--purple);font-weight:600;">0 kcal</span></div>
+    </div>
+  </div>
+
+  <!-- ALCOOL -->
+  <div class="card">
+    <div class="card-header"><div class="card-icon orange">🍷</div><div class="card-title">Alcool</div><div class="card-badge">7 kcal/g · Bloque lipolyse 12h</div></div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
+      L'alcool apporte 7 kcal/g mais surtout bloque l'oxydation des graisses pendant 12–16h car il est traité en priorité par le foie. Effect double sur le déficit.
+    </p>
+    <div class="sec-label">Consommation du jour</div>
+    <div class="alcool-grid" id="alcool-grid">
+      <div class="alcool-card active" onclick="setAlcool('none',this)"><div class="alcool-icon">🚫</div><div class="alcool-label">Aucun</div><div class="alcool-kcal">0 kcal</div></div>
+      <div class="alcool-card" onclick="setAlcool('biere',this)"><div class="alcool-icon">🍺</div><div class="alcool-label">1 bière</div><div class="alcool-kcal">~150 kcal</div></div>
+      <div class="alcool-card" onclick="setAlcool('verre_vin',this)"><div class="alcool-icon">🍷</div><div class="alcool-label">1 verre vin</div><div class="alcool-kcal">~120 kcal</div></div>
+      <div class="alcool-card" onclick="setAlcool('shot',this)"><div class="alcool-icon">🥃</div><div class="alcool-label">1 shot</div><div class="alcool-kcal">~70 kcal</div></div>
+      <div class="alcool-card" onclick="setAlcool('cocktail',this)"><div class="alcool-icon">🍹</div><div class="alcool-label">1 cocktail</div><div class="alcool-kcal">~200 kcal</div></div>
+      <div class="alcool-card" onclick="setAlcool('soiree',this)"><div class="alcool-icon">🎉</div><div class="alcool-label">Soirée</div><div class="alcool-kcal">~500 kcal</div></div>
+    </div>
+    <div id="alcool-qty-wrap" style="display:none;margin-top:12px;">
+      <div class="field"><label>Quantité</label><input type="number" id="alcool-qty" value="1" min="1" max="20" step="1" oninput="updateAlcoolCalc()"></div>
+    </div>
+    <div style="margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Kcal alcool</div><div style="font-size:22px;font-weight:700;color:var(--orange);letter-spacing:-0.5px;" id="alcool-kcal-display">0</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Effet lipolyse</div><div style="font-size:14px;font-weight:600;color:var(--red);" id="alcool-effect">—</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1245,6 +1384,86 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 </div>
 
 <!-- PWA INSTALL BANNER -->
+<!-- SYNCHRO QR OVERLAY -->
+<div id="sync-overlay" onclick="if(event.target===this)closeSyncOverlay()">
+  <div class="sync-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;">⇄ Synchronisation</div>
+      <button onclick="closeSyncOverlay()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div class="sync-tab-row">
+      <button class="sync-tab active" onclick="switchSyncTab('export',this)">📤 Exporter</button>
+      <button class="sync-tab" onclick="switchSyncTab('import',this)">📥 Importer</button>
+    </div>
+    <div id="sync-export-panel">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6;">Génère un QR code ou copie le JSON pour transférer toutes tes données vers un autre appareil.</p>
+      <canvas id="qr-canvas" width="200" height="200" style="border-radius:12px;background:#fff;padding:8px;"></canvas>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button onclick="exportJSON()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;">📋 Copier JSON</button>
+        <button onclick="downloadJSON()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;">↓ Télécharger</button>
+      </div>
+    </div>
+    <div id="sync-import-panel" style="display:none;">
+      <p style="font-size:13px;color:var(--text3);margin-bottom:12px;line-height:1.6;">Colle le JSON exporté depuis l'autre appareil ou importe le fichier.</p>
+      <textarea id="sync-import-text" placeholder="Colle ici le JSON exporté..." style="width:100%;height:120px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:monospace;font-size:12px;padding:12px;outline:none;resize:vertical;"></textarea>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <label style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;text-align:center;">
+          📂 Fichier JSON
+          <input type="file" accept=".json" onchange="importJSONFile(event)" style="display:none;">
+        </label>
+        <button onclick="importJSON()" style="flex:1;padding:11px;background:var(--green);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;">✅ Importer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THEMES OVERLAY -->
+<div id="themes-overlay" onclick="if(event.target===this)closeThemes()">
+  <div class="sync-box" style="max-width:320px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;">🎨 Couleur d'accent</div>
+      <button onclick="closeThemes()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div class="theme-picker">
+      <div class="theme-dot active" data-theme="" style="background:#0A84FF;" onclick="applyTheme('',this)" title="Bleu (défaut)"></div>
+      <div class="theme-dot" data-theme="rouge" style="background:#FF453A;" onclick="applyTheme('rouge',this)" title="Rouge"></div>
+      <div class="theme-dot" data-theme="vert" style="background:#30D158;" onclick="applyTheme('vert',this)" title="Vert"></div>
+      <div class="theme-dot" data-theme="violet" style="background:#BF5AF2;" onclick="applyTheme('violet',this)" title="Violet"></div>
+      <div class="theme-dot" data-theme="or" style="background:#FFD60A;" onclick="applyTheme('or',this)" title="Or"></div>
+      <div class="theme-dot" data-theme="rose" style="background:#FF375F;" onclick="applyTheme('rose',this)" title="Rose"></div>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:var(--text3);">La couleur s'applique aux éléments interactifs, graphiques et indicateurs.</div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS OVERLAY -->
+<div id="notif-overlay" onclick="if(event.target===this)closeNotifSettings()">
+  <div class="sync-box" style="max-width:360px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;">🔔 Rappels</div>
+      <button onclick="closeNotifSettings()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="notif-perm-block" style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.25);border-radius:12px;padding:14px;margin-bottom:16px;display:none;">
+      <div style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:6px;">Autorisation requise</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">Active les notifications pour recevoir des rappels.</div>
+      <button onclick="requestNotifPermission()" style="padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;">Autoriser les notifications</button>
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">⚖️ Pesée du matin</div><input type="time" id="notif-poids-time" value="07:30" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;margin-top:4px;"></div>
+      <div class="sw-wrap" onclick="toggleNotif('poids')" style="padding:0;background:none;border:none;border-radius:0;min-width:44px;cursor:pointer;"><div class="sw" id="notif-poids-sw"></div></div>
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">🍽️ Journal du soir</div><input type="time" id="notif-repas-time" value="20:00" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;margin-top:4px;"></div>
+      <div class="sw-wrap" onclick="toggleNotif('repas')" style="padding:0;background:none;border:none;border-radius:0;min-width:44px;cursor:pointer;"><div class="sw" id="notif-repas-sw"></div></div>
+    </div>
+    <div class="notif-row">
+      <div><div class="notif-label">💧 Hydratation</div><input type="time" id="notif-eau-time" value="12:00" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;margin-top:4px;"></div>
+      <div class="sw-wrap" onclick="toggleNotif('eau')" style="padding:0;background:none;border:none;border-radius:0;min-width:44px;cursor:pointer;"><div class="sw" id="notif-eau-sw"></div></div>
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--text3);">Les rappels nécessitent que l'app soit ouverte ou installée en PWA.</div>
+  </div>
+</div>
+
 <div id="pwa-banner">
   <div class="pwa-text">
     <strong>📱 Installer MÉTABO</strong>
@@ -1337,8 +1556,8 @@ const SAVE_KEY='metabo_session', HIST_KEY='metabo_history', SEANCES_KEY='metabo_
 document.addEventListener('DOMContentLoaded', () => {
   const restored = loadState();
   if (!restored) { addTapisRow(); addCardioRow(); }
-  initTheme(); injectManifest(); initPWA(); initPoidsObjectif(); updateLBM(); updateTEF(); updateLIPAHint(); updateWorkStatus(); updateFibresCalc(); updateHydraCalc(); renderPoidsLog();
-  updateCycleNote(); renderSeancePills(); renderHistory();
+  initTheme(); initAccent(); injectManifest(); initPWA(); initPoidsObjectif(); initNotifs(); updateLBM(); updateTEF(); updateLIPAHint(); updateWorkStatus(); updateFibresCalc(); updateHydraCalc(); renderPoidsLog();
+  updateCycleNote(); renderSeancePills(); renderRepasPills(); renderHistory();
   updateLiveBar();
 
   const dot = document.querySelector('.live-dot');
@@ -2347,7 +2566,8 @@ function updateLiveBar() {
     const real=getRealIntake();
     const dep=r.total;
     const fibresRed=getFibresReduction();
-    const app=real.kcal>0?Math.max(0,real.kcal-fibresRed):0; // apports nets (fibres soustraites)
+    const alcoolKcalLive=getAlcoolKcal();
+    const app=real.kcal>0?Math.max(0,real.kcal+alcoolKcalLive-fibresRed):0; // apports nets (fibres soustraites)
     const bal=app-dep;
     const cib=r.cible;
     setElText('lb-dep',dep);
@@ -2369,6 +2589,7 @@ function updateLiveBar() {
 function finDeJournee() {
   const r=computeTDEE();
   const real=getRealIntake();
+  const alcoolKcalFin = getAlcoolKcal();
   // Poids du jour
   const poidsLog = loadPoidsLog();
   const todayDate = new Date().toLocaleDateString('fr-FR');
@@ -2381,7 +2602,7 @@ function finDeJournee() {
     muscu:r.muscuRes.total, lipa:r.lipa, tef:r.tef,
     total:r.total, cible:r.cible, objectif:r.objectif,
     lbm:r.lbm, poids:r.poids,
-    apport:real.kcal, balance:real.kcal>0?real.kcal-r.total:null,
+    apport:real.kcal+alcoolKcalFin, balance:(real.kcal+alcoolKcalFin)>0?(real.kcal+alcoolKcalFin)-r.total:null,
     p:real.p, c:real.c, l:real.l,
     poidsKg:poidsAujourdhui
   };
@@ -3022,7 +3243,7 @@ function telechargerRapport() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SERVICE WORKER + PWA (modifié pour icônes valides et fallback manuel)
+// SERVICE WORKER + PWA
 // ═══════════════════════════════════════════════════════════
 let deferredInstallPrompt = null;
 
@@ -3040,31 +3261,18 @@ function initPWA() {
     navigator.serviceWorker.register(swUrl).catch(() => {});
   }
 
-  let promptShown = false;
+  // Détection prompt d'installation
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredInstallPrompt = e;
-    promptShown = true;
     const dismissed = localStorage.getItem('pwa_dismissed');
-    if (!dismissed) setTimeout(showPWABanner, 2000);
+    if (!dismissed) setTimeout(showPWABanner, 3000);
   });
 
-  // Fallback : si après 5 secondes l'événement n'est pas venu, on propose une installation manuelle
-  setTimeout(() => {
-    if (!promptShown && !localStorage.getItem('pwa_dismissed')) {
-      deferredInstallPrompt = null;
-      showPWABanner();
-      const bannerText = document.querySelector('#pwa-banner .pwa-text span');
-      if (bannerText) bannerText.textContent = 'Menu ⋮ → Installer l’application';
-      const installBtn = document.querySelector('.pwa-install-btn');
-      if (installBtn) {
-        installBtn.textContent = 'Comment faire';
-        installBtn.onclick = () => {
-          alert('Sur iPhone : Partager → Sur l’écran d’accueil\nSur Android : Menu ⋮ → Installer l’application\nSur ordinateur : icône (+) dans la barre d’adresse');
-        };
-      }
-    }
-  }, 5000);
+  window.addEventListener('appinstalled', () => {
+    hidePWABanner();
+    showToast('✅ MÉTABO installé sur ton appareil !');
+  });
 }
 
 function showPWABanner() {
@@ -3074,17 +3282,16 @@ function hidePWABanner() {
   document.getElementById('pwa-banner')?.classList.remove('show');
 }
 function installPWA() {
-  if (deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then(result => {
-      if (result.outcome === 'accepted') showToast('✅ Installation lancée !');
-      deferredInstallPrompt = null;
-      hidePWABanner();
-    });
-  } else {
-    // Instructions manuelles
-    alert('📱 Installation manuelle :\n• iPhone : Partager → "Sur l’écran d’accueil"\n• Android : Menu ⋮ → "Installer l’application"\n• Ordinateur : Icône (+) dans la barre d’adresse');
+  if (!deferredInstallPrompt) {
+    showToast('💡 Menu navigateur : Ajouter a l ecran accueil');
+    return;
   }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') showToast('✅ Installation lancée !');
+    deferredInstallPrompt = null;
+    hidePWABanner();
+  });
 }
 function dismissPWA() {
   hidePWABanner();
@@ -3092,75 +3299,26 @@ function dismissPWA() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MANIFEST PWA AVEC ICÔNES VALIDES (GÉNÉRÉES EN BASE64)
+// MANIFEST PWA (injecté dynamiquement)
 // ═══════════════════════════════════════════════════════════
 function injectManifest() {
-  // Fonction qui génère une icône carrée avec fond bleu/violet et éclair blanc
-  function generateIcon(size) {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-
-    // Fond dégradé
-    const gradient = ctx.createLinearGradient(0, 0, size, size);
-    gradient.addColorStop(0, '#0A84FF');
-    gradient.addColorStop(1, '#BF5AF2');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-
-    // Éclair blanc
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = `bold ${size * 0.55}px "Inter", -apple-system, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⚡', size / 2, size / 2);
-
-    return canvas.toDataURL('image/png');
+  // Manifest is now a real file (manifest.json) — SW registration below
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(reg => {
+        console.log('SW registered', reg.scope);
+        // Check for updates
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          w.addEventListener('statechange', () => {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('🔄 Mise à jour disponible — rechargez la page');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('SW registration failed:', err));
   }
-
-  const manifest = {
-    name: 'MÉTABO — Journal Métabolique',
-    short_name: 'MÉTABO',
-    description: 'Calcul TDEE, NEAT, tracking poids, journal alimentaire',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#000000',
-    theme_color: '#0A84FF',
-    orientation: 'portrait-primary',
-    icons: [
-      {
-        src: generateIcon(192),
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'any maskable'
-      },
-      {
-        src: generateIcon(512),
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'any maskable'
-      }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('link');
-  link.rel = 'manifest'; link.href = url;
-  document.head.appendChild(link);
-
-  // Meta theme-color
-  const meta = document.createElement('meta');
-  meta.name = 'theme-color'; meta.content = '#0A84FF';
-  document.head.appendChild(meta);
-
-  // Apple meta tags
-  const apple = document.createElement('meta');
-  apple.name = 'apple-mobile-web-app-capable'; apple.content = 'yes';
-  document.head.appendChild(apple);
-  const appleTitle = document.createElement('meta');
-  appleTitle.name = 'apple-mobile-web-app-title'; appleTitle.content = 'MÉTABO';
-  document.head.appendChild(appleTitle);
 }
 
 function deletePoids(id) {
@@ -3190,7 +3348,7 @@ function collectState() {
   const muscu={enabled:muscuEnabled,intensity:muscuIntensity,singles:[],ss:[]};
   document.querySelectorAll('.single-row-wrap').forEach(wrap=>{const row=wrap.querySelector('.muscu-row-inner');if(!row)return;const id=+row.id.replace('muscu-','');if(!muscuRows.includes(id))return;muscu.singles.push({grp:g(`mg-${id}`),ex:g(`me-${id}`),ser:g(`ms-${id}`),rep:g(`mr-${id}`),repos:g(`mrt-${id}`),rm:document.getElementById(`mrm-${id}`)?.value});});
   supersetBlocks.forEach(sid=>{const block=document.getElementById(`ss-${sid}`);if(!block)return;const rids=muscuRows.filter(id=>block.contains(document.getElementById(`muscu-${id}`)));const gi=(rid)=>({grp:g(`mg-${rid}`),ex:g(`me-${rid}`),ser:g(`ms-${rid}`),rep:g(`mr-${rid}`),rm:document.getElementById(`mrm-${rid}`)?.value});muscu.ss.push({repos:g(`ss-repos-${sid}`),ex1:rids[0]?gi(rids[0]):{},ex2:rids[1]?gi(rids[1]):{}});});
-  const alim={macroP:g('macro-p'),macroC:g('macro-c'),macroL:g('macro-l'),food:foodRows.map(id=>({n:g(`fn-${id}`),k:g(`fk-${id}`),p:g(`fp-${id}`),c:g(`fc-${id}`),l:g(`fl-${id}`)}))};
+  const alim={macroP:g('macro-p'),macroC:g('macro-c'),macroL:g('macro-l'),alcoolType,alcoolQty:g('alcool-qty'),food:foodRows.map(id=>({n:g(`fn-${id}`),k:g(`fk-${id}`),p:g(`fp-${id}`),c:g(`fc-${id}`),l:g(`fl-${id}`)}))};
   const activite={metier:g('metier'),workHours:g('work-hours'),marcheHors:g('marche-hors'),menage:g('menage'),trajets:g('trajets'),temperature:g('temperature'),fibresG:g('fibres-g'),digestionSpeed:g('digestion-speed'),fidgetLevel,sexActiviteLevel:document.querySelector('.sex-card.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1]||'none',hydraLitres:g('hydra-litres'),hydraTemp};
   return{profil,tapis,cardio,muscu,alim,activite};
 }
@@ -3266,6 +3424,422 @@ function loadState(){
     return true;
   }catch(e){console.warn('loadState error',e);return false;}
 }
+
+
+// ═══════════════════════════════════════════════════════════
+// OPEN FOOD FACTS
+// ═══════════════════════════════════════════════════════════
+let offDebounceTimer = null;
+function debounceOFF() {
+  clearTimeout(offDebounceTimer);
+  offDebounceTimer = setTimeout(searchOFF, 600);
+}
+
+async function searchOFF() {
+  const q = document.getElementById('off-search')?.value?.trim();
+  const resultsEl = document.getElementById('off-results');
+  if (!resultsEl) return;
+  if (!q || q.length < 2) { resultsEl.style.display = 'none'; return; }
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div class="off-loading">🔍 Recherche...</div>';
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments,code`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    const products = (data.products || []).filter(p => p.product_name && p.nutriments);
+    if (products.length === 0) {
+      resultsEl.innerHTML = '<div class="off-loading">Aucun résultat — essaie en anglais</div>';
+      return;
+    }
+    resultsEl.innerHTML = products.map(p => {
+      const n = p.nutriments;
+      const kcal = Math.round(n['energy-kcal_100g'] || n['energy_100g'] / 4.184 || 0);
+      const prot = (n['proteins_100g'] || 0).toFixed(1);
+      const glu = (n['carbohydrates_100g'] || 0).toFixed(1);
+      const lip = (n['fat_100g'] || 0).toFixed(1);
+      const brand = p.brands ? ` · ${p.brands.split(',')[0]}` : '';
+      return `<div class="off-result" onclick='addFoodFromOFF(${JSON.stringify({
+        name: p.product_name, brand: p.brands?.split(",")[0]||"", kcal, prot, glu, lip
+      }).replace(/'/g,"\'")})'><div class="off-result-name">${p.product_name}</div><div class="off-result-brand">${brand}</div><div class="off-result-macros">${kcal} kcal · P:${prot}g · G:${glu}g · L:${lip}g <span style="font-size:10px;color:var(--text3)">/ 100g</span></div></div>`;
+    }).join('');
+  } catch(e) {
+    resultsEl.innerHTML = '<div class="off-loading">❌ Erreur réseau — vérifie ta connexion</div>';
+  }
+}
+
+async function searchOFFBarcode(barcode) {
+  try {
+    const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.status === 1 && data.product) {
+      const p = data.product;
+      const n = p.nutriments;
+      const kcal = Math.round(n['energy-kcal_100g'] || 0);
+      addFoodFromOFF({ name: p.product_name, brand: p.brands?.split(',')[0]||'', kcal, prot: +(n['proteins_100g']||0).toFixed(1), glu: +(n['carbohydrates_100g']||0).toFixed(1), lip: +(n['fat_100g']||0).toFixed(1) });
+      showToast(`✅ ${p.product_name} ajouté`);
+    } else {
+      showToast('⚠️ Produit non trouvé dans Open Food Facts');
+    }
+  } catch { showToast('❌ Erreur réseau'); }
+}
+
+function addFoodFromOFF(product) {
+  if (typeof product === 'string') product = JSON.parse(product);
+  const resultsEl = document.getElementById('off-results');
+  if (resultsEl) resultsEl.style.display = 'none';
+  const searchEl = document.getElementById('off-search');
+  if (searchEl) searchEl.value = '';
+  // Demander la quantité
+  const qty = prompt(`Quantité de "${product.name}" (grammes) ?`, '100');
+  if (!qty || isNaN(+qty)) return;
+  const g = +qty / 100;
+  addFoodRow({
+    n: `${product.name}${product.brand?' ('+product.brand+')':''}`,
+    k: Math.round(product.kcal * g),
+    p: (product.prot * g).toFixed(1),
+    c: (product.glu * g).toFixed(1),
+    l: (product.lip * g).toFixed(1)
+  });
+}
+
+async function startBarcodeScanner() {
+  // Vérifier si l'API BarcodeDetector est disponible
+  if ('BarcodeDetector' in window) {
+    showToast('📷 Pointe la caméra vers le code-barres...');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.createElement('video');
+      video.srcObject = stream; video.play();
+      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+      const scan = async () => {
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length > 0) {
+            stream.getTracks().forEach(t => t.stop());
+            searchOFFBarcode(codes[0].rawValue);
+            return;
+          }
+        } catch {}
+        requestAnimationFrame(scan);
+      };
+      video.addEventListener('loadedmetadata', scan);
+    } catch { showToast('⚠️ Caméra non disponible'); }
+  } else {
+    // Fallback: saisie manuelle du code
+    const code = prompt('Code-barres (EAN-13) :');
+    if (code && code.length >= 8) searchOFFBarcode(code.trim());
+  }
+}
+
+// Fermer OFF results en cliquant ailleurs
+document.addEventListener('click', e => {
+  const res = document.getElementById('off-results');
+  const search = document.getElementById('off-search');
+  if (res && !res.contains(e.target) && e.target !== search) res.style.display = 'none';
+});
+
+// ═══════════════════════════════════════════════════════════
+// REPAS SAUVEGARDÉS
+// ═══════════════════════════════════════════════════════════
+const REPAS_KEY = 'metabo_repas';
+function loadRepas() { try { return JSON.parse(localStorage.getItem(REPAS_KEY)||'[]'); } catch { return []; } }
+function saveRepas(r) { localStorage.setItem(REPAS_KEY, JSON.stringify(r)); }
+
+function renderRepasPills() {
+  const repas = loadRepas();
+  const el = document.getElementById('repas-pills');
+  if (!el) return;
+  el.innerHTML = repas.map(r => `
+    <span class="repas-pill" onclick="chargerRepas(${r.id})">
+      ${r.name} <span style="color:var(--orange);font-size:10px;">${r.kcal} kcal</span>
+      <span class="rp-del" onclick="event.stopPropagation();supprimerRepas(${r.id})">✕</span>
+    </span>`).join('');
+}
+
+function sauvegarderRepas() {
+  if (foodRows.length === 0) { showToast('⚠️ Aucun aliment à sauvegarder'); return; }
+  const name = prompt('Nom du repas (ex: Mon petit déj) :');
+  if (!name?.trim()) return;
+  const real = getRealIntake();
+  const items = foodRows.map(id => ({
+    n: document.getElementById(`fn-${id}`)?.value || '',
+    k: document.getElementById(`fk-${id}`)?.value || '',
+    p: document.getElementById(`fp-${id}`)?.value || '',
+    c: document.getElementById(`fc-${id}`)?.value || '',
+    l: document.getElementById(`fl-${id}`)?.value || '',
+  }));
+  const repas = loadRepas();
+  repas.push({ id: Date.now(), name: name.trim(), kcal: real.kcal, items });
+  saveRepas(repas);
+  renderRepasPills();
+  showToast(`✅ Repas "${name}" sauvegardé`);
+}
+
+function chargerRepas(id) {
+  const repas = loadRepas().find(r => r.id === id);
+  if (!repas) return;
+  repas.items.forEach(item => addFoodRow(item));
+  showToast(`📋 "${repas.name}" chargé`);
+}
+
+function supprimerRepas(id) {
+  saveRepas(loadRepas().filter(r => r.id !== id));
+  renderRepasPills();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ALCOOL
+// ═══════════════════════════════════════════════════════════
+const ALCOOL_DATA = {
+  none:      { kcal: 0,   ethanol: 0,   label: 'Aucun',         lipolyse: null },
+  biere:     { kcal: 150, ethanol: 14,  label: '1 bière (33cl)', lipolyse: '~12h' },
+  verre_vin: { kcal: 120, ethanol: 12,  label: '1 verre vin',    lipolyse: '~10h' },
+  shot:      { kcal: 70,  ethanol: 14,  label: '1 shot',         lipolyse: '~8h' },
+  cocktail:  { kcal: 200, ethanol: 18,  label: '1 cocktail',     lipolyse: '~14h' },
+  soiree:    { kcal: 500, ethanol: 60,  label: 'Soirée',         lipolyse: '~16h+' },
+};
+let alcoolType = 'none';
+
+function setAlcool(type, el) {
+  alcoolType = type;
+  document.querySelectorAll('.alcool-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const qtyWrap = document.getElementById('alcool-qty-wrap');
+  if (qtyWrap) qtyWrap.style.display = type === 'none' ? 'none' : 'block';
+  updateAlcoolCalc();
+  saveState(); updateLiveBar();
+}
+
+function updateAlcoolCalc() {
+  const d = ALCOOL_DATA[alcoolType] || ALCOOL_DATA.none;
+  const qty = alcoolType === 'none' ? 0 : +document.getElementById('alcool-qty')?.value || 1;
+  const totalKcal = d.kcal * qty;
+  setElText('alcool-kcal-display', totalKcal);
+  const effectEl = document.getElementById('alcool-effect');
+  if (effectEl) {
+    if (d.lipolyse) {
+      effectEl.textContent = `Lipolyse bloquée ${d.lipolyse}`;
+      effectEl.style.color = 'var(--red)';
+    } else {
+      effectEl.textContent = '—';
+      effectEl.style.color = 'var(--text3)';
+    }
+  }
+  updateLiveBar();
+}
+
+function getAlcoolKcal() {
+  const d = ALCOOL_DATA[alcoolType] || ALCOOL_DATA.none;
+  const qty = alcoolType === 'none' ? 0 : +document.getElementById('alcool-qty')?.value || 1;
+  return d.kcal * qty;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYNCHRO JSON / QR
+// ═══════════════════════════════════════════════════════════
+function openSync() {
+  document.getElementById('sync-overlay').classList.add('open');
+  generateQR();
+}
+function closeSyncOverlay() { document.getElementById('sync-overlay').classList.remove('open'); }
+
+function switchSyncTab(tab, el) {
+  document.querySelectorAll('.sync-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sync-export-panel').style.display = tab === 'export' ? 'block' : 'none';
+  document.getElementById('sync-import-panel').style.display = tab === 'import' ? 'block' : 'none';
+}
+
+function getAllData() {
+  return {
+    version: 3,
+    exported: new Date().toISOString(),
+    session: localStorage.getItem('metabo_session'),
+    history: localStorage.getItem('metabo_history'),
+    poids: localStorage.getItem('metabo_poids'),
+    seances: localStorage.getItem('metabo_seances'),
+    repas: localStorage.getItem('metabo_repas'),
+    theme: localStorage.getItem('metabo_theme'),
+    accent: localStorage.getItem('metabo_accent'),
+    poidsObj: localStorage.getItem('metabo_poids_obj'),
+    notifs: localStorage.getItem('metabo_notifs'),
+  };
+}
+
+function exportJSON() {
+  const json = JSON.stringify(getAllData(), null, 2);
+  navigator.clipboard.writeText(json).then(() => showToast('✅ JSON copie - colle sur l’autre appareil'));
+}
+
+function downloadJSON() {
+  const json = JSON.stringify(getAllData(), null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `metabo_sync_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('✅ Fichier téléchargé');
+}
+
+function importJSON() {
+  const text = document.getElementById('sync-import-text')?.value?.trim();
+  if (!text) { showToast('⚠️ Colle le JSON d’abord'); return; }
+  applyImport(text);
+}
+
+function importJSONFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => applyImport(e.target.result);
+  reader.readAsText(file);
+}
+
+function applyImport(text) {
+  try {
+    const data = JSON.parse(text);
+    if (!data.version) throw new Error('Format invalide');
+    if (!confirm(`Importer les données du ${data.exported?.slice(0,10) || '?'} ? Cela remplacera tes données actuelles.`)) return;
+    if (data.session) localStorage.setItem('metabo_session', data.session);
+    if (data.history) localStorage.setItem('metabo_history', data.history);
+    if (data.poids) localStorage.setItem('metabo_poids', data.poids);
+    if (data.seances) localStorage.setItem('metabo_seances', data.seances);
+    if (data.repas) localStorage.setItem('metabo_repas', data.repas);
+    if (data.poidsObj) localStorage.setItem('metabo_poids_obj', data.poidsObj);
+    showToast('✅ Import réussi — rechargement...');
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    showToast('❌ Format invalide — assure-toi de coller le bon JSON');
+  }
+}
+
+function generateQR() {
+  const canvas = document.getElementById('qr-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, 200, 200);
+  ctx.fillStyle = '#000';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Utilise le bouton', 100, 70);
+  ctx.fillText('[Copier JSON] puis', 100, 90);
+  ctx.fillText('[Importer] sur', 100, 110);
+  ctx.fillText("l'autre appareil", 100, 130);
+  ctx.font = '28px sans-serif';
+  ctx.fillText('⇄', 100, 170);
+}
+
+// ═══════════════════════════════════════════════════════════
+// THÈMES
+// ═══════════════════════════════════════════════════════════
+function openThemes() { document.getElementById('themes-overlay').classList.add('open'); }
+function closeThemes() { document.getElementById('themes-overlay').classList.remove('open'); }
+
+function applyTheme(theme, el) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+  localStorage.setItem('metabo_accent', theme);
+  // Update theme-color meta
+  const colors = {'':"#0A84FF",rouge:"#FF453A",vert:"#30D158",violet:"#BF5AF2",or:"#FFD60A",rose:"#FF375F"};
+  const meta = document.getElementById('theme-color-meta');
+  if (meta) meta.content = colors[theme] || '#0A84FF';
+  closeThemes();
+}
+
+function initAccent() {
+  const saved = localStorage.getItem('metabo_accent');
+  if (saved !== null) {
+    const dot = document.querySelector(`.theme-dot[data-theme="${saved}"]`);
+    if (dot) applyTheme(saved, dot);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+const NOTIF_KEY = 'metabo_notifs';
+let notifState = { poids: false, repas: false, eau: false };
+let notifIntervals = {};
+
+function openNotifSettings() {
+  document.getElementById('notif-overlay').classList.add('open');
+  const perm = Notification.permission;
+  document.getElementById('notif-perm-block').style.display = perm === 'granted' ? 'none' : 'block';
+  // Load saved state
+  try { notifState = JSON.parse(localStorage.getItem(NOTIF_KEY)||'{}'); } catch {}
+  ['poids','repas','eau'].forEach(k => {
+    const sw = document.getElementById(`notif-${k}-sw`);
+    if (sw) sw.classList.toggle('on', !!notifState[k]);
+  });
+}
+function closeNotifSettings() { document.getElementById('notif-overlay').classList.remove('open'); }
+
+async function requestNotifPermission() {
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notif-perm-block').style.display = 'none';
+    showToast('✅ Notifications autorisées');
+  } else {
+    showToast('⚠️ Notifications refusées — active-les dans les paramètres du navigateur');
+  }
+}
+
+function toggleNotif(type) {
+  if (Notification.permission !== 'granted') {
+    requestNotifPermission();
+    return;
+  }
+  notifState[type] = !notifState[type];
+  const sw = document.getElementById(`notif-${type}-sw`);
+  if (sw) sw.classList.toggle('on', notifState[type]);
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(notifState));
+  if (notifState[type]) scheduleNotif(type);
+  else clearNotif(type);
+}
+
+function scheduleNotif(type) {
+  const timeEl = document.getElementById(`notif-${type}-time`);
+  if (!timeEl) return;
+  const [h, m] = timeEl.value.split(':').map(Number);
+  const MSGS = {
+    poids: ["MÉTABO — Pesée ⚖️", "Pense à te peser ce matin !"],
+    repas: ["MÉTABO — Journal 🍽️", "Saisis tes repas de la journée."],
+    eau:   ["MÉTABO — Eau 💧",     "Mets à jour ton hydratation."],
+  };
+  clearNotif(type);
+  const checkAndNotify = () => {
+    const now = new Date();
+    if (now.getHours() === h && now.getMinutes() === m) {
+      if (Notification.permission === 'granted') {
+        new Notification(MSGS[type][0], {
+          body: MSGS[type][1],
+          icon: './icons/icon-192.png',
+          badge: './icons/icon-72.png',
+          tag: `metabo-${type}`,
+          renotify: false
+        });
+      }
+    }
+  };
+  notifIntervals[type] = setInterval(checkAndNotify, 60000);
+  checkAndNotify();
+  showToast(`Rappel ${type} activé à ${timeEl.value}`);
+}
+
+function clearNotif(type) {
+  if (notifIntervals[type]) { clearInterval(notifIntervals[type]); delete notifIntervals[type]; }
+}
+
+function initNotifs() {
+  try { notifState = JSON.parse(localStorage.getItem(NOTIF_KEY)||'{}'); } catch {}
+  if (Notification.permission === 'granted') {
+    Object.keys(notifState).forEach(k => { if (notifState[k]) scheduleNotif(k); });
+  }
+}
+
 
 function resetSession(){
   if(!confirm('Réinitialiser la session ? (l\'historique du journal est conservé)'))return;

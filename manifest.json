@@ -1,0 +1,27 @@
+{
+  "name": "MÉTABO — Journal Métabolique",
+  "short_name": "MÉTABO",
+  "description": "Calcul TDEE, NEAT, tracking poids, journal alimentaire, Open Food Facts",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0A84FF",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "categories": ["health", "fitness", "food"],
+  "icons": [
+    { "src": "icons/icon-72.png", "sizes": "72x72", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "icons/screenshot.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow" }
+  ],
+  "shortcuts": [
+    { "name": "Journal", "url": "./index.html#journal", "icons": [{"src": "icons/icon-96.png", "sizes": "96x96"}] },
+    { "name": "Saisir poids", "url": "./index.html#poids", "icons": [{"src": "icons/icon-96.png", "sizes": "96x96"}] }
+  ]
+}
