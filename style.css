@@ -1,0 +1,136 @@
+/* ═══ DESIGN SYSTEM MÉTABO ═══ */
+:root {
+  --bg: #000000;
+  --bg2: #0a0a0a;
+  --surface: rgba(28,28,30,0.92);
+  --surface2: rgba(44,44,46,0.8);
+  --border: rgba(255,255,255,0.08);
+  --blue: #0A84FF;
+  --green: #30D158;
+  --orange: #FF9F0A;
+  --red: #FF453A;
+  --purple: #BF5AF2;
+  --teal: #5AC8FA;
+  --text: #FFFFFF;
+  --text2: rgba(255,255,255,0.7);
+  --text3: rgba(255,255,255,0.4);
+  --blur: blur(40px) saturate(180%);
+  --r: 16px;
+}
+
+/* Arrière-plan avec dégradés subtils */
+body { 
+  background: var(--bg); 
+  color: var(--text); 
+  font-family: 'Inter', -apple-system, sans-serif; 
+  min-height: 100vh;
+  margin: 0;
+  padding-bottom: 140px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1;
+  background: radial-gradient(ellipse at 20% 10%, rgba(10,132,255,0.12), transparent 60%),
+              radial-gradient(ellipse at 80% 80%, rgba(48,209,88,0.08), transparent 60%), #000;
+}
+
+/* Header effet verre */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: var(--blur);
+  border-bottom: 1px solid var(--border);
+  padding: 15px 20px;
+}
+
+/* Cartes et sections */
+.card {
+  background: var(--surface);
+  backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  margin: 15px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* Champs de saisie */
+input[type="number"], input[type="text"], select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 12px;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 5px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--blue);
+}
+
+/* Navigation par onglets */
+.tabs-nav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab-btn.active {
+  color: var(--blue);
+  border-bottom: 2px solid var(--blue);
+}
+
+/* Boutons d'action */
+button {
+  border-radius: 12px;
+  border: none;
+  padding: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.add-btn {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text3);
+  width: 100%;
+}
+
+/* Bande de résultats en bas */
+#live-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 300;
+  background: rgba(10,10,12,0.85);
+  backdrop-filter: var(--blur);
+  border-top: 1px solid var(--border);
+  padding: 15px 20px 30px;
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+.live-label { font-size: 10px; color: var(--text3); text-transform: uppercase; }
+.live-val { font-size: 20px; font-weight: 700; margin-top: 4px; }
