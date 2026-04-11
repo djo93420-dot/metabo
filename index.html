@@ -671,13 +671,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
       <div class="app-name">MÉTABO<span>.</span></div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap;">
-      <button onclick="openWidget()" title="Widget" style="background:rgba(10,132,255,0.12);border:1px solid rgba(10,132,255,0.25);color:var(--blue);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">◎</button>
-      <button onclick="openCloud()" id="btn-cloud" title="Sauvegarde Cloud" style="background:rgba(191,90,242,0.12);border:1px solid rgba(191,90,242,0.25);color:var(--purple);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">☁️</button>
-      <button onclick="openSync()" title="Synchro Manuelle" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">⇄</button>
-      <button onclick="openThemes()" title="Thème" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🎨</button>
-      <button onclick="toggleDark()" id="dark-btn" title="Clair/Sombre" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🌙</button>
-      <button onclick="openNotifSettings()" title="Rappels" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">🔔</button>
-      <button onclick="resetSession()" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:13px;cursor:pointer;padding:6px 10px;border-radius:10px;">↺</button>
+      <button onclick="openCloud()" id="btn-cloud" title="Sauvegarde Cloud" style="background:rgba(191,90,242,0.12);border:1px solid rgba(191,90,242,0.25);color:var(--purple);font-size:14px;cursor:pointer;padding:7px 10px;border-radius:10px;">☁️ Cloud</button>
+    </div>
     </div>
   </div>
   <div class="tabs-nav">
@@ -688,6 +683,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <button class="tab-btn" onclick="switchTab('alim')">Alimentation</button>
     <button class="tab-btn" onclick="switchTab('activite')">Activité</button>
     <button class="tab-btn" onclick="switchTab('journal')">Journal</button>
+    <button class="tab-btn" onclick="switchTab('parametres')" style="flex-shrink:0;">⚙️</button>
   </div>
 </header>
 
@@ -1345,6 +1341,33 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     <button onclick="copierHier()" style="width:100%;margin-top:16px;padding:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
       📋 Copier la session d'hier
     </button>
+  </div>
+</div>
+
+<!-- ══════════ PARAMÈTRES ══════════════════════════════════════ -->
+<div class="tab-panel" id="panel-parametres">
+  <div class="card">
+    <div class="card-header"><div class="card-icon" style="background:var(--surface3);color:var(--text);">⚙️</div><div class="card-title">Paramètres de l'Application</div></div>
+    
+    <div class="sec-label" style="margin-top:0;">Apparence</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <button onclick="toggleDark()" id="dark-btn-2" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;cursor:pointer;">🌙 Basculer le Mode</button>
+      <button onclick="openThemes()" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;cursor:pointer;">🎨 Couleur d'Accent</button>
+    </div>
+
+    <div class="sec-label">Fonctionnalités</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <button onclick="openNotifSettings()" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;cursor:pointer;">🔔 Gérer les Rappels</button>
+      <button onclick="openWidget()" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;cursor:pointer;">◎ Assistant Widget</button>
+    </div>
+
+    <div class="sec-label">Données Local / Cloud</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <button onclick="openSync()" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;cursor:pointer;">⇄ Importer / Exporter (JSON)</button>
+    </div>
+
+    <div class="sec-label" style="color:var(--red);">Zone de Danger</div>
+    <button onclick="resetSession()" style="width:100%;padding:12px;background:rgba(255,69,58,0.1);border:1px solid rgba(255,69,58,0.25);border-radius:12px;color:var(--red);font-size:14px;font-weight:600;cursor:pointer;">↺ Réinitialiser la session actuelle</button>
   </div>
 </div>
 
@@ -3576,10 +3599,10 @@ async function searchOFF() {
       const glu = (n['carbohydrates_100g'] || 0).toFixed(1);
       const lip = (n['fat_100g'] || 0).toFixed(1);
       const brand = p.brands ? ` · ${p.brands.split(',')[0]}` : '';
-      const img = p.image_front_url ? `<img src="${p.image_front_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;background:white;margin-right:12px;flex-shrink:0;">` : `<div style="width:36px;height:36px;border-radius:6px;background:var(--surface3);margin-right:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🍽️</div>`;
+      const img = p.image_front_url ? `<img src="${p.image_front_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;background:white;margin-right:12px;flex-shrink:0;">` : `<div style="width:40px;height:40px;border-radius:6px;background:var(--surface3);margin-right:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🍽️</div>`;
       return `<div class="off-result" style="display:flex;align-items:center;cursor:pointer;" onclick='addFoodFromOFF(${JSON.stringify({
         name: p.product_name, brand: p.brands?.split(",")[0]||"", kcal, prot, glu, lip
-      }).replace(/'/g,"\\'")})'>${img}<div><div class="off-result-name">${p.product_name}</div><div class="off-result-brand">${brand}</div><div class="off-result-macros">${kcal} kcal · P:${prot}g · G:${glu}g · L:${lip}g <span style="font-size:10px;color:var(--text3)">/ 100g</span></div></div></div>`;
+      }).replace(/'/g,"&apos;")})'>${img}<div><div class="off-result-name">${p.product_name}</div><div class="off-result-brand">${brand}</div><div class="off-result-macros">${kcal} kcal · P:${prot}g · G:${glu}g · L:${lip}g <span style="font-size:10px;color:var(--text3)">/ 100g</span></div></div></div>`;
     }).join('');
   } catch(e) {
     resultsEl.innerHTML = '<div class="off-loading">❌ Erreur réseau — vérifie ta connexion</div>';
@@ -3623,36 +3646,34 @@ function addFoodFromOFF(product) {
   });
 }
 
+let scannerInstance = null;
 async function startBarcodeScanner() {
   const overlay = document.getElementById('scanner-overlay');
   if (!overlay) {
-    document.body.insertAdjacentHTML('beforeend', `<div id="scanner-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;"><div style="width:100%;max-width:500px;position:relative;margin:0 20px;"><button onclick="closeScanner()" style="position:absolute;top:-40px;right:0px;background:none;border:none;color:#fff;font-size:32px;cursor:pointer;z-index:901;">&times;</button><div id="reader" style="width:100%;min-height:300px;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);background:#000;"></div></div><div style="color:var(--text3);margin-top:20px;font-size:13px;text-align:center;">Placez le code-barres au centre</div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="scanner-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:900;display:none;flex-direction:column;align-items:center;justify-content:center;"><div style="width:100%;max-width:500px;position:relative;margin:0 20px;background:var(--surface);border-radius:16px;padding:20px;padding-top:40px;"><button onclick="closeScanner()" style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text);font-size:24px;cursor:pointer;z-index:901;">&times;</button><div id="reader" style="width:100%;min-height:300px;"></div></div></div>`);
   }
   document.getElementById('scanner-overlay').style.display = 'flex';
   
-  if (typeof Html5Qrcode === 'undefined') { showToast('⚠️ Librairie Scanner non chargée'); return; }
+  if (typeof Html5QrcodeScanner === 'undefined') { showToast('⚠️ Librairie Scanner non chargée'); return; }
   
-  window.html5QrCode = new Html5Qrcode("reader");
-  window.html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, aspectRatio: 1.0 },
-    (decodedText) => {
-      window.html5QrCode.stop().then(() => {
-        document.getElementById('scanner-overlay').style.display = 'none';
-        searchOFFBarcode(decodedText);
-      }).catch(err => console.log(err));
-    },
-    (err) => {}
-  ).catch(err => {
-    showToast('⚠️ Erreur caméra (Fallback manuel activé)');
-    document.getElementById('scanner-overlay').style.display = 'none';
-    const code = prompt('Code-barres (EAN-13) :');
-    if (code && code.length >= 8) searchOFFBarcode(code.trim());
-  });
+  if (!scannerInstance) {
+    scannerInstance = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+  }
+  
+  scannerInstance.render((decodedText) => {
+    scannerInstance.clear().then(() => {
+      document.getElementById('scanner-overlay').style.display = 'none';
+      searchOFFBarcode(decodedText);
+      scannerInstance = null; // reset to allow re-init easily
+    }).catch(()=>{});
+  }, (err) => { /* ignore minor scan errors */ });
 }
+
 window.closeScanner = function() {
   document.getElementById('scanner-overlay').style.display = 'none';
-  if (window.html5QrCode) window.html5QrCode.stop().catch(()=>{});
+  if (scannerInstance) {
+    scannerInstance.clear().then(() => { scannerInstance = null; }).catch(()=>{});
+  }
 }
 
 // Fermer OFF results en cliquant ailleurs
