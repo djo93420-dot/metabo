@@ -453,6 +453,14 @@ select option { background: #1c1c1e; }
   gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);
 }
 .food-log-row:last-child { border-bottom: none; }
+@media(max-width: 600px) {
+  .food-log-row {
+    grid-template-columns: 1fr 1fr 1fr 1fr 36px;
+    gap: 6px;
+  }
+  .food-log-row > :nth-child(1) { grid-column: 1 / -1; margin-bottom: 4px; }
+  .food-log-row input[type="number"] { padding: 8px 4px; text-align: center; font-size: 13px; }
+}
 
 /* ── JOURNAL ────────────────────────────────────────────── */
 .journal-day {
