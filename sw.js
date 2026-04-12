@@ -1,4 +1,4 @@
-const CACHE_NAME = 'metabo-v3';
+const CACHE_NAME = 'metabo-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -22,25 +22,31 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network first pour les API externes, cache first pour les assets locaux
   const url = new URL(e.request.url);
-  if (url.hostname === 'world.openfoodfacts.org' || url.hostname === 'fonts.googleapis.com') {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-    return;
-  }
+  // Pour les requêtes locales (HTML, CSS, etc.) -> Network First
+  // Pour les API externes (OpenFoodFacts, Fonts) -> Network First aussi (plus simple et efficace pour la dev)
+  
+  if (e.request.method !== 'GET') return;
+  
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
-        if (resp && resp.status === 200 && resp.type === 'basic') {
+    fetch(e.request)
+      .then(resp => {
+        // Mettre en cache la nouvelle version
+        if (resp && resp.status === 200) {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return resp;
-      }).catch(() => caches.match('./index.html'));
-    })
+      })
+      .catch(() => {
+        // En cas de mode hors-ligne, retourner la version en cache
+        return caches.match(e.request).then(cached => {
+          if (cached) return cached;
+          if (e.request.destination === 'document' || e.request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
+        });
+      })
   );
 });
 

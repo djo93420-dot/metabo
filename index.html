@@ -3377,18 +3377,7 @@ function telechargerRapport() {
 let deferredInstallPrompt = null;
 
 function initPWA() {
-  // Enregistrement du Service Worker (inline via blob)
-  if ('serviceWorker' in navigator) {
-    const swCode = [
-      "const CACHE = 'metabo-v1';",
-      "self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/']))); });",
-      "self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/')))); });",
-      "self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))); });"
-    ].join('\n');
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(() => {});
-  }
+  // (Le Service Worker est désormais enregistré via injectManifest().)
 
   // Détection prompt d'installation
   window.addEventListener('beforeinstallprompt', e => {
