@@ -1631,22 +1631,31 @@ function showToast(msg) {
 // ═══════════════════════════════════════════════════════════
 function initSwipeToDelete(element, onDeleteCallback) {
   element.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-  let startX = 0, currentX = 0, isSwiping = false;
+  let startX = 0, currentX = 0, isSwiping = false, isInteractive = false;
   element.addEventListener('touchstart', e => {
+    if (['INPUT', 'SELECT', 'BUTTON', 'OPTION'].includes(e.target.tagName)) {
+      isInteractive = true;
+      return;
+    }
+    isInteractive = false;
     startX = e.touches[0].clientX;
     isSwiping = true;
     element.style.transition = 'none'; // Suit le doigt
-  });
+  }, {passive: true});
   element.addEventListener('touchmove', e => {
-    if(!isSwiping) return;
+    if(!isSwiping || isInteractive) return;
     currentX = e.touches[0].clientX;
     const diff = currentX - startX;
-    if (diff < -10) element.style.transform = `translateX(${Math.max(diff, -100)}px)`;
-  });
+    if (diff < -10) {
+      element.style.transform = `translateX(${Math.max(diff, -100)}px)`;
+      if (e.cancelable) e.preventDefault(); // bloque le scroll vertical accidentel
+    }
+  }, {passive: false});
   element.addEventListener('touchend', e => {
+    if (isInteractive) return;
     isSwiping = false;
     element.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-    const diff = currentX - startX;
+    const diff = currentX ? currentX - startX : 0;
     if (diff < -60) {
       triggerVibrate('medium');
       element.style.transform = `translateX(-100%)`;
