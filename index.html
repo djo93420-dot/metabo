@@ -1611,12 +1611,52 @@ function switchTab(id) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// TOAST
+// UX : HAPTIQUE & TOAST
 // ═══════════════════════════════════════════════════════════
+function triggerVibrate(type = 'light') {
+  if (!navigator.vibrate) return;
+  const p = { light: 15, medium: 30, heavy: 50, success: [15, 100, 30], error: [50, 100, 50] };
+  navigator.vibrate(p[type] || 15);
+}
+
 function showToast(msg) {
+  triggerVibrate('success');
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// UX : SWIPE TO DELETE
+// ═══════════════════════════════════════════════════════════
+function initSwipeToDelete(element, onDeleteCallback) {
+  element.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+  let startX = 0, currentX = 0, isSwiping = false;
+  element.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    isSwiping = true;
+    element.style.transition = 'none'; // Suit le doigt
+  });
+  element.addEventListener('touchmove', e => {
+    if(!isSwiping) return;
+    currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    if (diff < -10) element.style.transform = `translateX(${Math.max(diff, -100)}px)`;
+  });
+  element.addEventListener('touchend', e => {
+    isSwiping = false;
+    element.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    const diff = currentX - startX;
+    if (diff < -60) {
+      triggerVibrate('medium');
+      element.style.transform = `translateX(-100%)`;
+      element.style.opacity = '0';
+      setTimeout(onDeleteCallback, 300);
+    } else {
+      element.style.transform = `translateX(0)`;
+    }
+    startX = 0; currentX = 0;
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1773,7 +1813,7 @@ function updateTapisKcal(id) {
       const s=+document.getElementById(`fs-${id}-${cid}`)?.value||0;
       const dur=(m*60+s)/60;
       const spd=vit*1000/60, grade=inc/100, isRun=vit>=8;
-      const vo2=((spd*0.1)+(isRun?spd*grade*0.9:spd*grade*1.8)+3.5)*economy;
+      const vo2=((isRun?spd*0.2:spd*0.1)+(isRun?spd*grade*0.9:spd*grade*1.8)+3.5)*economy;
       cycleKcal+=vo2*poids/1000*dur*5;
     });
     kcal=cycleKcal*reps;
@@ -1783,7 +1823,7 @@ function updateTapisKcal(id) {
     const inc=+document.getElementById(`t-inc-${id}`)?.value||0;
     const dur=+document.getElementById(`t-dur-${id}`)?.value||0;
     const spd=vit*1000/60, grade=inc/100, isRun=vit>=8;
-    const vo2=((spd*0.1)+(isRun?spd*grade*0.9:spd*grade*1.8)+3.5)*economy;
+    const vo2=((isRun?spd*0.2:spd*0.1)+(isRun?spd*grade*0.9:spd*grade*1.8)+3.5)*economy;
     kcal=vo2*poids/1000*dur*5;
     lbl=`kcal · ${vit}km/h ${inc}% ${dur}min`;
   }
@@ -1814,6 +1854,7 @@ function addTapisRow(data) {
   const id=++tapisCount; tapisRows.push(id);
   const div=document.createElement('div'); div.className='row-block tapis-row'; div.id=`tapis-${id}`;
   div.innerHTML=tapisRowHTML(id,data||{});
+  initSwipeToDelete(div, () => removeTapisRow(id));
   document.getElementById('tapis-list').appendChild(div);
   updateTapisType(id);
   setTimeout(()=>updateTapisKcal(id),30);
@@ -1865,7 +1906,7 @@ function computeTapis(poids) {
         const s=+document.getElementById(`fs-${id}-${cid}`)?.value||0;
         const dur=(m*60+s)/60;
         const spd=vit*1000/60, grade=inc/100, isRun=vit>=8;
-        const hor=spd*0.1, vert=isRun?spd*grade*0.9:spd*grade*1.8;
+        const hor=isRun?spd*0.2:spd*0.1, vert=isRun?spd*grade*0.9:spd*grade*1.8;
         const vo2=(hor+vert+3.5)*economy;
         cycleKcal+=vo2*poids/1000*dur*5;
       });
@@ -1876,7 +1917,7 @@ function computeTapis(poids) {
       const vit=+document.getElementById(`t-vit-${id}`)?.value||5;
       const inc=+document.getElementById(`t-inc-${id}`)?.value||0;
       const spd=vit*1000/60, grade=inc/100, isRun=vit>=8;
-      const hor=spd*0.1, vert=isRun?spd*grade*0.9:spd*grade*1.8;
+      const hor=isRun?spd*0.2:spd*0.1, vert=isRun?spd*grade*0.9:spd*grade*1.8;
       const vo2=(hor+vert+3.5)*economy;
       const kcal=vo2*poids/1000*duree*5;
       total+=kcal;
@@ -1918,6 +1959,7 @@ function addCardioRow(data) {
   const id=++cardioCount; cardioRows.push(id);
   const div=document.createElement('div'); div.className='row-block cardio-row'; div.id=`cardio-${id}`;
   div.innerHTML=cardioRowHTML(id,data||{});
+  initSwipeToDelete(div, () => removeCardioRow(id));
   document.getElementById('cardio-list').appendChild(div);
   updateCardioKcal(id); saveState();
 }
@@ -2040,6 +2082,7 @@ function addMuscuRow(r) {
   const badge=document.createElement('div'); badge.className='kcal-badge muscu'; badge.id=`m-kcal-badge-${id}`;
   badge.innerHTML=`<span class="kb-val" id="m-kcal-${id}">—</span><span class="kb-lbl" id="m-kcal-lbl-${id}">kcal estimé</span>`;
   wrap.appendChild(inner); wrap.appendChild(badge);
+  initSwipeToDelete(wrap, () => { muscuRows=muscuRows.filter(x=>x!==id); wrap.remove(); saveState(); updateLiveBar(); });
   document.getElementById('muscu-list').appendChild(wrap);
   setTimeout(()=>updateMuscuKcal(id),50); // delay pour que le DOM soit prêt
   saveState();
@@ -2203,6 +2246,7 @@ function addFoodRow(data) {
   const id=++foodCount; foodRows.push(id);
   const div=document.createElement('div'); div.className='food-log-row'; div.id=`food-${id}`;
   div.innerHTML=foodRowHTML(id);
+  initSwipeToDelete(div, () => removeFoodRow(id));
   document.getElementById('food-log-list').appendChild(div);
   if(data){setVal(`fn-${id}`,data.n);setVal(`fk-${id}`,data.k);setVal(`fp-${id}`,data.p);setVal(`fc-${id}`,data.c);setVal(`fl-${id}`,data.l);}
   updateFoodTotals(); updateFibresCalc(); saveState();
@@ -2700,6 +2744,24 @@ function renderHistory() {
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Journées</div><div style="font-size:22px;font-weight:700;color:var(--text3);letter-spacing:-0.5px;">${hist.length}</div></div>
   </div>`;
 
+  const hmapHTML = (() => {
+    if(hist.length === 0) return '';
+    const actData = [...hist].reverse().map(h => ({ d: h.date, k: (h.total||0) - (h.bmr||0) - (h.tef||0) }));
+    const boxes = actData.map(val => {
+      let c = 'var(--surface2)';
+      if(val.k > 1000) c = 'var(--blue)'; // Intense
+      else if(val.k > 600) c = 'rgba(10,132,255,0.7)';
+      else if(val.k > 300) c = 'rgba(10,132,255,0.4)';
+      else if(val.k > 100) c = 'rgba(10,132,255,0.2)';
+      return `<div title="${val.d} : ${Math.round(val.k)} kcal actives" style="width:14px;height:14px;border-radius:3px;background:${c};"></div>`;
+    }).join('');
+    return `
+      <div style="margin-bottom:24px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Intensité d'Activité (60 jrs)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${boxes}</div>
+      </div>`;
+  })();
+
   const rows=hist.map(h=>{
     const bal=h.balance;
     const balColor=bal<0?'var(--red)':bal>0?'var(--green)':'var(--text3)';
@@ -2714,7 +2776,7 @@ function renderHistory() {
     </div>`;
   }).join('');
 
-  el.innerHTML=statsHTML+rows;
+  el.innerHTML=statsHTML+hmapHTML+rows;
   renderChart(hist);
 }
 
