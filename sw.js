@@ -1,7 +1,12 @@
-const CACHE_NAME = 'metabo-v4';
+const CACHE_NAME = 'metabo-v5';
 const ASSETS = [
   './',
   './index.html',
+  './style.css',
+  './constants.js',
+  './calculations.js',
+  './ui.js',
+  './app.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
 ];
 
